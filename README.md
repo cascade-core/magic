@@ -1,7 +1,12 @@
 Cascade Magic
 =============
 
-@todo Write README
+The Magic plugin synthetizes page blocks from various metadata, like Smalldb
+state machines and form definitions.
+
+Primary feature of this plugin is a block storage. Default configuration
+registers this block storage and lets it scan all resources in global context
+automatically.
 
 
 License
