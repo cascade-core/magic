@@ -27,8 +27,9 @@ class BlockStorage implements \Cascade\Core\IBlockStorage
 	/**
 	 * Constructor will get options from core.ini.php file.
 	 */
-	public function __construct($storage_opts, $auth, $context)
+	public function __construct($storage_opts, $context, $alias)
 	{
+		// TODO: Do this later.
 		if (!empty($storage_opts['scan_context'])) {
 			$this->scanContext($context);
 		}
@@ -38,10 +39,22 @@ class BlockStorage implements \Cascade\Core\IBlockStorage
 	/**
 	 * Automatic scan of (global) context to collect all available 
 	 * metadata.
+	 *
+	 * TODO: Register only factories after context scan, detect block existence on demand.
+	 *       Simple map: Object class -> Factory
+	 *
+	 * TODO: Scan for smalldb machines, create pages from template 'page/$machine_type/$action'.
+	 *       (only for block enumeration)
+	 *
+	 * TODO: Introduce extendable scanning mechanism.
+	 *
+	 * TODO: Select correct block by requested Content-Type -- AJAX API.
 	 */
 	protected function scanContext($context)
 	{
-		// TODO
+		//foreach ($context as $r => $resource) {
+		//	debug_dump($resource, $r);
+		//}
 	}
 
 
@@ -70,7 +83,7 @@ class BlockStorage implements \Cascade\Core\IBlockStorage
 	/**
 	 * Describe block for documentation generator.
 	 *
-	 * @todo
+	 * @todo Some minimal description.
 	 */
 	public function describeBlock ($block)
 	{
@@ -116,6 +129,8 @@ class BlockStorage implements \Cascade\Core\IBlockStorage
 
 	/**
 	 * List all available blocks in this storage.
+	 *
+	 * TODO: Scan all factories for known blocks.
 	 */
 	public function getKnownBlocks (& $blocks = array())
 	{
