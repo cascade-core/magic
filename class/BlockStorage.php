@@ -23,12 +23,19 @@ namespace Magic;
  */
 class BlockStorage implements \Cascade\Core\IBlockStorage
 {
+	protected $alias;
+	protected $options;
+	protected $context;
 
 	/**
 	 * Constructor will get options from core.ini.php file.
 	 */
 	public function __construct($storage_opts, $context, $alias)
 	{
+		$this->alias = $alias;
+		$this->context = $context;
+		$this->options = $storage_opts;
+
 		// TODO: Do this later.
 		if (!empty($storage_opts['scan_context'])) {
 			$this->scanContext($context);
@@ -70,12 +77,45 @@ class BlockStorage implements \Cascade\Core\IBlockStorage
 
 
 	/**
-	 * Create instance of requested block and give it loaded configuration.
-	 * No further initialisation here, that is job for cascade controller.
-	 * Returns created instance or false.
+	 * Create instance of requested block. Block is created automagically.
 	 */
 	public function createBlockInstance ($block)
 	{
+		// Parse block name
+		$block_parts = explode('/', $block);
+		if (count($block_parts) != 3) {
+			return false;
+		}
+		list($prefix, $entity, $action) = $block_parts;
+
+		// Scan all resources
+		foreach ($this->context as $r => $resource) {
+
+			// Check Smalldb Backend
+			if ($resource instanceof \Smalldb\StateMachine\AbstractBackend) {
+
+				// Lookup state machine
+				$machine = $resource->getMachine($entity);
+				if ($machine == null) {
+					debug_dump('no mach');
+					return false;
+				}
+
+				// Lookup action
+				if ($action == 'show') {
+					// Virtual action to display entity
+					return new \B_core__dummy;
+				} else {
+					// Transition invocation
+					$action_desc = $machine->describeMachineAction($action);
+					if ($action_desc == null) {
+						return false;
+					}
+					return new \B_core__dummy;
+				}
+			}
+		}
+
 		return false;
 	}
 
