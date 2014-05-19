@@ -1,0 +1,23 @@
+{
+	"name": "cascade/magic",
+	"type": "cascade-plugin",
+	"description": "Magically synthetize pages from various metadata.",
+	"license": "Apache-2.0",
+	"authors": [
+		{
+			"name": "Josef Kufner",
+			"email": "jk@frozen-doe.net"
+		}
+	],
+	"extra": {
+		"plugin": "magic"
+	},
+	"autoload": {
+		"psr-4": { "Magic\\": "class/" }
+	},
+	"require": {
+		"cascade/composer-plugin": ">=1.1",
+		"cascade/core": ">=0.11"
+	}
+}
+
