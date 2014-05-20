@@ -21,7 +21,7 @@ namespace Magic;
 /**
  * Block storage which magically creates page blocks.
  */
-class BlockStorage implements \Cascade\Core\IBlockStorage
+class BlockStorage extends \Cascade\Core\JsonBlockStorage implements \Cascade\Core\IBlockStorage
 {
 	protected $alias;
 	protected $options;
@@ -32,6 +32,8 @@ class BlockStorage implements \Cascade\Core\IBlockStorage
 	 */
 	public function __construct($storage_opts, $context, $alias)
 	{
+		parent::__construct($storage_opts, $context, $alias);
+
 		$this->alias = $alias;
 		$this->context = $context;
 		$this->options = $storage_opts;
@@ -79,7 +81,26 @@ class BlockStorage implements \Cascade\Core\IBlockStorage
 	/**
 	 * Create instance of requested block. Block is created automagically.
 	 */
-	public function createBlockInstance ($block)
+	//public function createBlockInstance ($block)
+	//{
+	//}
+
+
+	/**
+	 * Describe block for documentation generator.
+	 *
+	 * @todo Some minimal description.
+	 */
+	//public function describeBlock ($block)
+	//{
+	//	return false;
+	//}
+
+
+	/**
+	 * Load block configuration. Returns false if block is not found.
+	 */
+	public function loadBlock ($block)
 	{
 		// Parse block name
 		$block_parts = explode('/', $block);
@@ -101,41 +122,33 @@ class BlockStorage implements \Cascade\Core\IBlockStorage
 					return false;
 				}
 
+				$args = array(
+					'entity' => $entity,
+					'action' => $action,
+				);
+
 				// Lookup action
-				if ($action == 'show') {
-					// Virtual action to display entity
-					return new \B_core__dummy;
-				} else {
-					// Transition invocation
+				if ($action != 'show') {
 					$action_desc = $machine->describeMachineAction($action);
 					if ($action_desc == null) {
 						return false;
 					}
-					return new \B_core__dummy;
 				}
+
+				// Load block
+				$block_config = parent::loadBlock('magic/template/'.$action);
+				if (!$block_config) {
+					return false;
+				}
+				array_walk_recursive($block_config, function(& $val, $key) use ($args) {
+					if (is_string($val)) {
+						$val = filename_format($val, $args);
+					}
+				});
+				return $block_config;
 			}
 		}
 
-		return false;
-	}
-
-
-	/**
-	 * Describe block for documentation generator.
-	 *
-	 * @todo Some minimal description.
-	 */
-	public function describeBlock ($block)
-	{
-		return false;
-	}
-
-
-	/**
-	 * Load block configuration. Returns false if block is not found.
-	 */
-	public function loadBlock ($block)
-	{
 		return false;
 	}
 
