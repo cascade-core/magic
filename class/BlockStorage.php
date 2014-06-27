@@ -23,9 +23,12 @@ namespace Magic;
  */
 class BlockStorage extends \Cascade\Core\JsonBlockStorage implements \Cascade\Core\IBlockStorage
 {
-	protected $alias;
-	protected $options;
-	protected $context;
+	protected $alias;		///< Name of this block storage instance (debug)
+	protected $options;		///< Options given to constructor
+	protected $context;		///< Global context
+
+	protected $template_block_fmt;	///< Template to create block names
+
 
 	/**
 	 * Constructor will get options from core.ini.php file.
@@ -37,6 +40,8 @@ class BlockStorage extends \Cascade\Core\JsonBlockStorage implements \Cascade\Co
 		$this->alias = $alias;
 		$this->context = $context;
 		$this->options = $storage_opts;
+
+		$this->template_block_fmt = $storage_opts['template_block_fmt'];
 
 		// TODO: Do this later.
 		if (!empty($storage_opts['scan_context'])) {
@@ -128,7 +133,7 @@ class BlockStorage extends \Cascade\Core\JsonBlockStorage implements \Cascade\Co
 				);
 
 				// Lookup action
-				if ($action != 'show') {
+				if ($action != 'show' && $action != 'listing') {
 					$action_desc = $machine->describeMachineAction($action);
 					if ($action_desc == null) {
 						return false;
@@ -136,7 +141,7 @@ class BlockStorage extends \Cascade\Core\JsonBlockStorage implements \Cascade\Co
 				}
 
 				// Load block
-				$block_config = parent::loadBlock('magic/template/'.$action);
+				$block_config = parent::loadBlock(filename_format($this->template_block_fmt, $args));
 				if (!$block_config) {
 					return false;
 				}

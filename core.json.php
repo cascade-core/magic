@@ -4,7 +4,8 @@
         "magic": {
             "storage_class": "Magic\\BlockStorage",
             "storage_weight": 90,
-	    "scan_context": true
+            "scan_context": true,
+            "template_block_fmt": "magic_template/{action}"
         }
     }
 }

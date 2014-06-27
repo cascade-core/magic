@@ -9,6 +9,34 @@ registers this block storage and lets it scan all resources in global context
 automatically.
 
 
+Usage
+-----
+
+  1. Create blocks as usual, then point `template_block` option of the magic
+     block storage to them: `"magic_template/{action}"`. Same symbols as in
+     templates are available.
+
+  2. Any block of name in form "prefix/entity/action", will be created.
+     Relevant entity and action must be found in context.
+
+  3. Blocks are created as usual, but after loading all strings are processed
+     using `filename_format()` function.
+
+It is a good idea to put magic block storage as the last one. It allows to
+override any generated block, but still have nice generated default blocks.
+
+
+Available symbols in template
+-----------------------------
+
+@note Symbols are processed using `filename_format()` function. There are more
+  features than plain string substitution only.
+
+  - `{entity}`: Entity name from requested block name.
+  - `{action}`: Action from requested block name.
+
+@todo Get more symbols.
+
 License
 -------
 
