@@ -5,7 +5,10 @@
             "storage_class": "Magic\\BlockStorage",
             "storage_weight": 90,
             "scan_context": true,
-            "template_block_fmt": "magic_template/{action}"
+            "block_patterns": {
+                "/^page\\/(?<entity>[^\\/]+)\\/(?<action>[^\\/]+)$/": "magic_page/{action}",
+                "/^(?<entity>[^\\/]+)\\/form\\/(?<form_name>[^\\/]+)$/": "magic_form/{form_name}"
+            }
         }
     }
 }

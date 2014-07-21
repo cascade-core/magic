@@ -27,8 +27,9 @@ class BlockStorage extends \Cascade\Core\JsonBlockStorage implements \Cascade\Co
 	protected $options;		///< Options given to constructor
 	protected $context;		///< Global context
 
-	protected $template_block_fmt;	///< Template to create block names
+	protected $block_patterns;	///< Regexps to match block names
 
+	protected $entity_resources;	///< List of known entities and their storages (map: entity name => resource).
 
 	/**
 	 * Constructor will get options from core.ini.php file.
@@ -41,11 +42,12 @@ class BlockStorage extends \Cascade\Core\JsonBlockStorage implements \Cascade\Co
 		$this->context = $context;
 		$this->options = $storage_opts;
 
-		$this->template_block_fmt = $storage_opts['template_block_fmt'];
-
-		// TODO: Do this later.
 		if (!empty($storage_opts['scan_context'])) {
 			$this->scanContext($context);
+		}
+
+		if (!empty($storage_opts['block_patterns'])) {
+			$this->block_patterns = $storage_opts['block_patterns'];
 		}
 	}
 
@@ -66,9 +68,16 @@ class BlockStorage extends \Cascade\Core\JsonBlockStorage implements \Cascade\Co
 	 */
 	protected function scanContext($context)
 	{
-		//foreach ($context as $r => $resource) {
-		//	debug_dump($resource, $r);
-		//}
+		$this->entity_resources = array();
+
+		foreach ($context as $r => $resource) {
+			if ($resource instanceof \Smalldb\StateMachine\AbstractBackend) {
+				// Remember resource for this entity
+				foreach ($resource->getKnownTypes() as $type) {
+					$this->entity_resources[$type] = $resource;
+				}
+			}
+		}
 	}
 
 
@@ -107,54 +116,68 @@ class BlockStorage extends \Cascade\Core\JsonBlockStorage implements \Cascade\Co
 	 */
 	public function loadBlock ($block)
 	{
-		// Parse block name
-		$block_parts = explode('/', $block);
-		if (count($block_parts) != 3) {
+		foreach ($this->block_patterns as $pattern => $block_name_fmt) {
+			if (preg_match($pattern, $block, $m)) {
+				return $this->loadEntityBlock($m, $block_name_fmt);
+			}
+		}
+		return false;
+	}
+
+
+	/**
+	 * Load block representing a page for given `$action` on the `$entity`.
+	 */
+	protected function loadEntityBlock($args, $block_name_fmt)
+	{
+		$entity = $args['entity'];
+
+		if (isset($this->entity_resources[$entity])) {
+			$resource = $this->entity_resources[$entity];
+		} else {
 			return false;
 		}
-		list($prefix, $entity, $action) = $block_parts;
 
-		// Scan all resources
-		foreach ($this->context as $r => $resource) {
+		// Check Smalldb Backend for actions
+		if (isset($args['action']) && $resource instanceof \Smalldb\StateMachine\AbstractBackend) {
+			$action = $args['action'];
 
-			// Check Smalldb Backend
-			if ($resource instanceof \Smalldb\StateMachine\AbstractBackend) {
+			// Lookup state machine
+			$machine = $resource->getMachine($entity);
 
-				// Lookup state machine
-				$machine = $resource->getMachine($entity);
-				if ($machine == null) {
-					debug_dump('no mach');
+			// Lookup action
+			if ($action != 'show' && $action != 'listing') {
+				$action_desc = $machine->describeMachineAction($action);
+				if ($action_desc == null) {
 					return false;
 				}
-
-				$args = array(
-					'entity' => $entity,
-					'action' => $action,
-				);
-
-				// Lookup action
-				if ($action != 'show' && $action != 'listing') {
-					$action_desc = $machine->describeMachineAction($action);
-					if ($action_desc == null) {
-						return false;
-					}
-				}
-
-				// Load block
-				$block_config = parent::loadBlock(filename_format($this->template_block_fmt, $args));
-				if (!$block_config) {
-					return false;
-				}
-				array_walk_recursive($block_config, function(& $val, $key) use ($args) {
-					if (is_string($val)) {
-						$val = filename_format($val, $args);
-					}
-				});
-				return $block_config;
 			}
 		}
 
-		return false;
+		// Load block
+		return $this->createBlockFromTemplate($block_name_fmt, $args);
+	}
+
+	/**
+	 * Load block as usual, but replace symbols in the block and its name
+	 * using filename_format().
+	 */
+	protected function createBlockFromTemplate($template_name_fmt, $args)
+	{
+		// Load template
+		$block_config = parent::loadBlock(filename_format($template_name_fmt, $args));
+		if (!$block_config) {
+			return false;
+		}
+
+		// Replace symbols
+		array_walk_recursive($block_config, function(& $val, $key) use ($args) {
+			if (is_string($val)) {
+				$val = filename_format($val, $args);
+			}
+		});
+
+		return $block_config;
 	}
 
 
