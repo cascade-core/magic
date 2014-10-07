@@ -34,9 +34,9 @@ class BlockStorage extends \Cascade\Core\JsonBlockStorage implements \Cascade\Co
 	/**
 	 * Constructor will get options from core.ini.php file.
 	 */
-	public function __construct($storage_opts, $context, $alias)
+	public function __construct($storage_opts, $context, $alias, $is_write_allowed)
 	{
-		parent::__construct($storage_opts, $context, $alias);
+		parent::__construct($storage_opts, $context, $alias, $is_write_allowed);
 
 		$this->alias = $alias;
 		$this->context = $context;
