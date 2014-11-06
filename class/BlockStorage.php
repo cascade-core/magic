@@ -116,9 +116,9 @@ class BlockStorage extends \Cascade\Core\JsonBlockStorage implements \Cascade\Co
 	 */
 	public function loadBlock ($block)
 	{
-		foreach ($this->block_patterns as $pattern => $block_name_fmt) {
+		foreach ($this->block_patterns as $pattern => $block_settings) {
 			if (preg_match($pattern, $block, $m)) {
-				return $this->loadEntityBlock($m, $block_name_fmt);
+				return $this->loadEntityBlock($m, $block_settings);
 			}
 		}
 		return false;
@@ -128,9 +128,10 @@ class BlockStorage extends \Cascade\Core\JsonBlockStorage implements \Cascade\Co
 	/**
 	 * Load block representing a page for given `$action` on the `$entity`.
 	 */
-	protected function loadEntityBlock($args, $block_name_fmt)
+	protected function loadEntityBlock($args, $block_settings)
 	{
 		$entity = $args['entity'];
+		$block_name_fmt = $block_settings['block_name_fmt'];
 
 		if (isset($this->entity_resources[$entity])) {
 			$resource = $this->entity_resources[$entity];
@@ -155,19 +156,24 @@ class BlockStorage extends \Cascade\Core\JsonBlockStorage implements \Cascade\Co
 		}
 
 		// Load block
-		return $this->createBlockFromTemplate($block_name_fmt, $args);
+		return $this->createBlockFromTemplate($block_name_fmt, $args, $block_settings['fallback_args']);
 	}
 
 	/**
 	 * Load block as usual, but replace symbols in the block and its name
 	 * using filename_format().
 	 */
-	protected function createBlockFromTemplate($template_name_fmt, $args)
+	protected function createBlockFromTemplate($template_name_fmt, $args, $fallback_args)
 	{
 		// Load template
 		$block_config = parent::loadBlock(filename_format($template_name_fmt, $args));
 		if (!$block_config) {
-			return false;
+			if (!empty($fallback_args)) {
+				$block_config = parent::loadBlock(filename_format($template_name_fmt, array_merge($args, $fallback_args)));
+			}
+			if (!$block_config) {
+				return false;
+			}
 		}
 
 		// Replace symbols
